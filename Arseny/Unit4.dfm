@@ -2,7 +2,7 @@ object Form4: TForm4
   Left = 0
   Top = 0
   Align = alClient
-  BorderStyle = bsSingle
+  BorderStyle = bsNone
   Caption = 'Form4'
   ClientHeight = 809
   ClientWidth = 1858
