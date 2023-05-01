@@ -11,6 +11,8 @@ type
     PaintBox1: TPaintBox;
     Timer1: TTimer;
     Image1: TImage;
+    Image2: TImage;
+    Image3: TImage;
     procedure FormCreate(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
@@ -29,8 +31,8 @@ type
     source:TBitmap;
     const arm1 = 60;
           arm2 = 50;
-          leg1 = 45;
-          leg2 = 55;
+          leg1 = 35;
+          leg2 = 45;
           xc=200;
           yc=200;
           linewidth = 4;
@@ -50,7 +52,9 @@ type
 
   Tframe = 0..100;
   TGuitar = class
+    gtype  :1..2;
     Body   :TArray<TPoint>;
+    Body2  :TArray<TPoint>;
     bridge :TArray<TPoint>;
     Grif   :TArray<TPoint>;
     Head   :TArray<TPoint>;
@@ -64,12 +68,14 @@ type
           yc=100;
   public
     constructor Create;
+    procedure changetype(t:Integer);
     procedure draw(dest:TCanvas; x, y:Integer; newlineframe:integer);
     procedure rotate(angle:double);
     procedure changelineframe(frame:Integer);
 
   private
     procedure redraw();
+    procedure newpoints();
   end;
 var
   Form1: TForm1;
@@ -87,6 +93,69 @@ implementation
 
 
 
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  t:=0;
+  guitangle:=-0.4;
+  guitx:=20;
+  guity:=-30;
+  h:=thuman.create();
+  g:=TGuitar.Create();
+
+  g.rotate(guitangle);
+  //g.changetype(2);
+  //g.draw(Image3.canvas, 100, 100, 0);
+  h.setbodyup(10, -70);
+  h.setlleg(20, 100);
+  h.setrleg(-20, 100);
+  h.setlarm(guitx+Round(60*cos(guitangle)),guity+Round(60*sin(guitangle)));
+  h.DrawWithGuitar(g.source, guitx, guity);
+  h.draw(Image1.canvas, 200, 200);
+end;
+
+procedure TForm1.Timer1Timer(Sender: TObject);
+var rhandframe, cosrh, swinglength:double;
+framelength, l:integer;
+begin
+  Inc(t);
+  {if t mod 60 = 0 then
+    begin
+      lhandpos:=(random(2)+3)*20;
+      h.setlarm(guitx+Round(lhandpos*cos(guitangle)),guity+Round(lhandpos*sin(guitangle)));
+    end; }
+
+      framelength:=15;
+      l:=6;
+
+    swinglength:=0.5;
+    rhandframe:= (t mod framelength)/framelength;
+    if rhandframe<swinglength then
+      cosrh:=cos(rhandframe*PI/(swinglength))
+    else
+      cosrh:=-cos((rhandframe-swinglength)*PI/(1-swinglength));
+  h.setrarm(guitx+Round(8*cos(guitangle)), guity+-1+Round(8*sin(guitangle))-Round(l*cosrh));
+  Image1.canvas.Rectangle(0,0, 500, 500);
+  h.DrawWithGuitar(g.source, guitx, guity);
+  h.draw(Image1.canvas, 200, 200);
+end;
+
+{ THuman }
+
+constructor THuman.Create;
+begin
+  inherited;
+  headr:=20;
+  bodyup:=Point(0, -80);
+  bodydown:=Point(0,0);
+  rightarm:=Point(10,-30);
+  leftarm:=Point(50,-90);
+  rightleg:=Point(-30,90);
+  leftleg:=Point(+30,90);
+  source:=TBitmap.Create(400, 400);
+  source.Transparent:=true;
+  redraw();
+end;
 function  THuman.FindThirdPoint(var P0, P1:TPoint; a,b:double; clockwise:boolean; gravity:boolean):TPoint;
 const sign : array [boolean] of integer = (-1, 1);
 var c, c1, cos1, cosc, sinc:double;
@@ -111,59 +180,6 @@ begin
   result.x:=P0.x+Round(x*cosc-y*sinc);
   result.y:=P0.y+Round(x*sinc+y*cosc);
 end;
-procedure TForm1.FormCreate(Sender: TObject);
-begin
-  t:=0;
-  guitangle:=-0.5;
-  guitx:=30;
-  guity:=-30;
-  point1:=Point(50, 50);
-  point2:=Point(50+Round(40*cos(t)), 50+Round(40*sin(t)));
-  h:=thuman.create();
-  g:=TGuitar.Create();
-
-  g.rotate(guitangle);
-  h.setbodyup(10, -80);
-
-  h.setlarm(guitx+Round(60*cos(guitangle)),guity+Round(60*sin(guitangle)));
-  ///h.draw(Paintbox1.canvas, 300, 300);
-  h.DrawWithGuitar(g.source, guitx, guity);
-  h.draw(Image1.canvas, 200, 200);
-end;
-
-procedure TForm1.Timer1Timer(Sender: TObject);
-begin
-  Inc(t);
-  {point2:=Point(80+Round(20*cos(t*0.04)), 80+Round(20*sin(t*0.04)));
-  point3:=h.FindThirdPoint(point1, point2, 40, 40, false, true);
-  PaintBox1.canvas.Rectangle(0,0, 200, 200);
-  PaintBox1.canvas.Polyline([point1, point3, point2]);  }
-  //if sin(t*0.3)<0 then
-  //g.changelineframe(t mod 5);
-  h.setrarm(guitx, guity+Round(5*cos(t*0.3)));
-  Image1.canvas.Rectangle(0,0, 500, 500);
-  h.DrawWithGuitar(g.source, guitx, guity);
-  h.draw(Image1.canvas, 200, 200);
-end;
-
-{ THuman }
-
-constructor THuman.Create;
-begin
-  inherited;
-  headr:=20;
-  bodyup:=Point(0, -90);
-  bodydown:=Point(0,0);
-  rightarm:=Point(10,-30);
-  leftarm:=Point(50,-90);
-  rightleg:=Point(-30,90);
-  leftleg:=Point(+30,90);
-  source:=TBitmap.Create(400, 400);
-  source.Transparent:=true;
-
-  redraw();
-end;
-
 procedure THuman.draw(dest: TCanvas; x, y: Integer);
 begin
     dest.Draw(x-xc, y-yc, source);
@@ -192,6 +208,7 @@ begin
       PolyLine([temp,center+leftarm]);
       Draw(x-100+xc,y-100+yc, guitarsource);
       PolyLine([center+Bodyup, center+FindThirdPoint(Bodyup, rightarm, arm1, arm2, true, false),center+rightarm]);
+      PolyLine([center+leftarm, Point((temp.x+center.x+leftarm.x) div 2, (temp.y+center.y+leftarm.y) div 2)]);
 
     end;
 end;
@@ -283,28 +300,26 @@ begin
   redraw();
 end;
 
+procedure TGuitar.changetype(t: Integer);
+begin
+  if (t=1) or(t=2) then
+  begin
+    gtype:=t;
+    newpoints();
+    redraw();
+  end;
+end;
+
 constructor TGuitar.Create;
 begin
   inherited;
-  Body:=   [Point(-30, -28),
-            Point(-20, -30),Point(-8, -12),
-            Point(8, -23),
-            Point(28, -23), Point(28, 23),
-            Point(8, 23),
-            Point(-8, 12), Point(-20, 30),
-            Point(-30, 28),
-            Point(-56, 28), Point(-56, -28),
-            Point(-30, -28)];
-  Bridge:= [Point(-29, -14),Point(-26, -14),Point(-26, 14), Point(-29, 14)];
-  Grif:=   [Point(3, -5), Point(74, -5), Point(74, 5), Point(3, 5)];
-  Head:=   [Point(74, -6), Point(97, -6), Point(97, 6), Point(74, 6)];
-  Peg:=    [Point(76, -9), Point(79, -9), Point(79, -7),Point(76, -7)];
-  Line:=   [Point(-27, -3),Point(-14, -3), Point(-14, -3), Point(0, -3)];
+  gtype:=1;
+  newpoints();
   lineframe:=0;
   sina:=0;
   cosa:=1;
-    source:=TBitmap.Create(200, 200);
-    source.Transparent:=true;
+  source:=TBitmap.Create(200, 200);
+  source.Transparent:=true;
   redraw();
 end;
 
@@ -324,40 +339,75 @@ begin
 end;
 var i, k:integer;
 begin
-  with source do begin
-  canvas.pen.color:=clwhite;
-  canvas.brush.color:=clwhite;
-  canvas.rectangle(0,0,200, 200);
-  Canvas.Pen.Color := clBlack;
-  Canvas.PolyBezier(add(body, 0, 0 ,false));
+  if gtype=1 then
+    with source do begin
+    canvas.pen.color:=clwhite;
+    canvas.brush.color:=clwhite;
+    canvas.rectangle(0,0,200, 200);
+    Canvas.Pen.Color := clBlack;
+    Canvas.PolyBezier(add(body, 0, 0 ,false));
 
-  Canvas.Brush.Color :=Rgb(47, 27, 28);
-  Canvas.Polygon(add(bridge, 0, 0 ,false));
+    Canvas.Brush.Color :=Rgb(47, 27, 28);
+    Canvas.Polygon(add(bridge, 0, 0 ,false));
 
-  Canvas.Brush.Color :=Rgb(65, 65, 65);
-  Canvas.Polygon(add(Grif, 0, 0 ,false));
+    Canvas.Brush.Color :=Rgb(65, 65, 65);
+    Canvas.Polygon(add(Grif, 0, 0 ,false));
 
-  Canvas.Brush.Color :=Rgb(108, 31, 5);
-  Canvas.Polygon(add(Head, 0, 0 ,false));
+    Canvas.Brush.Color :=Rgb(108, 31, 5);
+    Canvas.Polygon(add(Head, 0, 0 ,false));
 
-  Canvas.Brush.Color :=Rgb(26, 19, 9);
-  Canvas.Ellipse(xc-8, yc-8, xc+8, yc+8);
+    Canvas.Brush.Color :=Rgb(26, 19, 9);
+    Canvas.Ellipse(xc-8, yc-8, xc+8, yc+8);
 
-  Canvas.Brush.Color :=Rgb(225, 165, 105);
-  Canvas.FloodFill(xc-Round(12*cosa), yc-Round(12*sina), clBlack, fsBorder);
+    Canvas.Brush.Color :=Rgb(225, 165, 105);
+    Canvas.FloodFill(xc-Round(12*cosa), yc-Round(12*sina), clBlack, fsBorder);
 
-  Canvas.Brush.Color :=Rgb(169, 169, 169);
-  for i := 0 to 2 do
-    begin
-      Canvas.Polygon(add(Peg, 7*i, 0, false));
-      Canvas.Polygon(add(Peg, 7*i, 0, true));
+    Canvas.Brush.Color :=Rgb(169, 169, 169);
+    for i := 0 to 2 do
+      begin
+        Canvas.Polygon(add(Peg, 7*i, 0, false));
+        Canvas.Polygon(add(Peg, 7*i, 0, true));
+      end;
+    Canvas.Pen.Color := RGB(255, 254, 255);
+    for i := 0 to 2 do
+      for k := 0 to 3 do
+        Canvas.PolyBezier(add(Line, 27*k, i*3 ,false));
+    end
+  else
+    with source do begin
+    canvas.pen.color:=clwhite;
+    canvas.brush.color:=clwhite;
+    canvas.rectangle(0,0,200, 200);
+    Canvas.Pen.Color := clBlack;
+    Canvas.PolyBezier(add(body, 0, 0 ,false));
+    Canvas.PolyBezier(add(body2, 0, 0 ,false));
+
+    Canvas.Brush.Color :=Rgb(47, 27, 28);
+    Canvas.Polygon(add(bridge, 0, 0 ,false));
+
+    Canvas.Brush.Color :=Rgb(65, 65, 65);
+    Canvas.Polygon(add(Grif, 0, 0 ,false));
+
+    Canvas.Brush.Color :=Rgb(108, 31, 5);
+    Canvas.Polygon(add(Head, 0, 0 ,false));
+
+    //Canvas.Brush.Color :=Rgb(26, 19, 9);
+    //Canvas.Ellipse(xc-8, yc-8, xc+8, yc+8);
+
+    Canvas.Brush.Color :=clRed;
+    Canvas.FloodFill(xc-Round(12*cosa), yc-Round(12*sina), clBlack, fsBorder);
+
+    Canvas.Brush.Color :=Rgb(169, 169, 169);
+    for i := 0 to 2 do
+      begin
+        Canvas.Polygon(add(Peg, 7*i, 0, false));
+        Canvas.Polygon(add(Peg, 7*i, 0, true));
+      end;
+    Canvas.Pen.Color := RGB(255, 254, 255);
+    for i := 0 to 2 do
+      for k := 0 to 3 do
+        Canvas.PolyBezier(add(Line, 27*k, i*3 ,false));
     end;
-  Canvas.Pen.Color := RGB(255, 254, 255);
-  for i := 0 to 2 do
-    for k := 0 to 3 do
-      Canvas.PolyBezier(add(Line, 27*k, i*3 ,false));
-  end;
-
 end;
 
 procedure TGuitar.rotate;
@@ -368,7 +418,6 @@ begin
 end;
 
 procedure TGuitar.changelineframe;
-var y1, y2:integer;
 begin
   if frame<>lineframe then
     begin
@@ -395,5 +444,68 @@ end;
 
 
 
+
+procedure TGuitar.newpoints;
+begin
+  if gtype =1 then
+    begin
+      Body:=   [Point(-40, -28),
+                Point(-20, -30),Point(-8, -12),
+                Point(8, -23),
+                Point(28, -23), Point(28, 23),
+                Point(8, 23),
+                Point(-8, 12), Point(-20, 30),
+                Point(-30, 28),
+                Point(-56, 28), Point(-56, -28),
+                Point(-40, -28)];
+      Bridge:= [Point(-29, -14),Point(-26, -14),Point(-26, 14), Point(-29, 14)];
+      Grif:=   [Point(3, -5), Point(74, -5), Point(74, 5), Point(3, 5)];
+      Head:=   [Point(74, -6), Point(97, -6), Point(97, 6), Point(74, 6)];
+      Peg:=    [Point(76, -9), Point(79, -9), Point(79, -7),Point(76, -7)];
+      Line:=   [Point(-27, -3),Point(-14, -3), Point(-14, -3), Point(0, -3)];
+    end
+  else
+    begin
+      Body:=   [Point(-24, -28),
+                Point(-10, -30),Point(-8, -12),
+                Point(18, -23),
+                Point(28, -23), Point(28, -23),
+                Point(38, -20),
+                Point(35, -5), Point(18, -25),
+                Point(18, 0),
+                Point(5, 10), Point(5, 20),
+                Point(24, 20),
+                Point(30, 20), Point(27, 25),
+                Point(24, 25),
+                Point(22, 26), Point(20, 26),
+                Point(6, 27),
+                Point(-20, 25), Point(-6, 20),
+                Point(-33, 30),
+                Point(-56, 38), Point(-56, -28),
+                Point(-24, -28)];
+      Body2:=   [Point(-8, -10),
+                Point(-2, -8),Point(-8, -12),
+                Point(16, -5){,
+                Point(28, -23), Point(28, -23),
+                Point(38, -20),
+                Point(35, -5), Point(18, -25),
+                Point(18, 0),
+                Point(5, 10), Point(5, 20),
+                Point(24, 20),
+                Point(30, 20), Point(27, 25),
+                Point(24, 25),
+                Point(22, 26), Point(20, 26),
+                Point(6, 27),
+                Point(-20, 25), Point(-6, 20),
+                Point(-33, 30),
+                Point(-56, 38), Point(-56, -28),
+                Point(-24, -28)}];
+      Bridge:= [Point(-29, -14),Point(-26, -14),Point(-26, 14), Point(-29, 14)];
+      Grif:=   [Point(3, -5), Point(74, -5), Point(74, 5), Point(3, 5)];
+      Head:=   [Point(74, -6), Point(97, -6), Point(97, 6), Point(74, 6)];
+      Peg:=    [Point(76, -9), Point(79, -9), Point(79, -7),Point(76, -7)];
+      Line:=   [Point(-27, -3),Point(-14, -3), Point(-14, -3), Point(0, -3)];
+    end
+end;
 
 end.
