@@ -10,11 +10,8 @@ uses
 type
   TForm1 = class(TForm)
     Timer1: TTimer;
-    Vysotsky: TButton;
     MediaPlayer1: TMediaPlayer;
-    Escape: TButton;
     vstupTimer: TTimer;
-    ExitButton: TButton;
     procedure Timer1Timer(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure VysotskyClick(Sender: TObject);
@@ -73,24 +70,6 @@ begin
   end;
 end;
 
-procedure TForm1.EscapeClick(Sender: TObject);
-begin
-  Timer1.Enabled := False;
-  MediaPlayer1.Stop;
-  Escape.Visible := False;
-  Vysotsky.Visible := True;
-end;
-
-procedure TForm1.ExitButtonClick(Sender: TObject);
-begin
-  Close;
-end;
-
-procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-  CloseFile(FTextFile);
-end;
-
 procedure TForm1.vstupTimerTimer(Sender: TObject);
 begin
   vstupTimer.Enabled := False;
@@ -103,32 +82,6 @@ begin
   Canvas.Ellipse(ClientWidth div 2 - 80, 10, ClientWidth div 2 + 330, 140);
   DisplayNextLine(ClientWidth div 2, 50);
   DisplayNextLine(ClientWidth div 2, 75);
-end;
-
-procedure TForm1.DrawMan(X, Y:Integer);
-begin
-  // Нарисовать голову
-  Canvas.Ellipse(X - 20, Y, X + 20, Y + 40);
-
-  // Нарисовать тело
-  Canvas.MoveTo(X, Y + 40);
-  Canvas.LineTo(X, Y + 100);
-
-  // Нарисовать левую руку
-  Canvas.MoveTo(X, Y + 60);
-  Canvas.LineTo(X - 20, Y + 80);
-
-  // Нарисовать правую руку
-  Canvas.MoveTo(X, Y + 60);
-  Canvas.LineTo(X + 20, Y + 80);
-
-  // Нарисовать левую ногу
-  Canvas.MoveTo(X, Y + 100);
-  Canvas.LineTo(X - 20, Y + 140);
-
-  // Нарисовать правую ногу
-  Canvas.MoveTo(X, Y + 100);
-  Canvas.LineTo(X + 20, Y + 140);
 end;
 
 procedure TForm1.DrawPeople(X1, X2, Y1, Y2:Integer);
