@@ -4,120 +4,89 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.MPlayer;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls;
 
 type
   TForm4 = class(TForm)
-    ImageScene: TImage;
-    TimerColorChange: TTimer;
-    TimerHand: TTimer;
+    Image1: TImage;
     TimerFonMotion: TTimer;
-    Pause: TTimer;
-    Play: TTimer;
-    MediaPlayer1: TMediaPlayer;
-    Titres: TTimer;
     procedure TimerFonMotionTimer(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure TimerColorChangeTimer(Sender: TObject);
-    procedure TimerHandTimer(Sender: TObject);
-    function DisplayNextLineVysotsky:string;
-    procedure PauseTimer(Sender: TObject);
-    procedure PlayTimer(Sender: TObject);
-    procedure TitresTimer(Sender: TObject);
+    Procedure DrawFons(Size, XPL, YPL : Integer; BmpX : TBitmap);
+    procedure BitmapCreate(var BmpX : TBitmap);
+    Procedure CloseOpenShtorki(XPL, YPL : Integer; CL : Boolean);
   private
     { Private declarations }
   public
     { Public declarations }
   end;
-
-  THuman = class
-    headr: Integer;
-    bodyup: TPoint;
-    Bodydown: TPoint;
-    rightarm: TPoint;
-    leftarm: TPoint;
-    rightleg: TPoint;
-    leftleg: TPoint;
-    source: TBitmap;
-
-  const
-    arm1 = 60;
-    arm2 = 50;
-    leg1 = 35;
-    leg2 = 45;
-    xc = 200;
-    yc = 200;
-    linewidth = 4;
-    constructor Create;
-  public
-    procedure setrarm(x, y: Integer);
-    procedure setlarm(x, y: Integer);
-    procedure setrleg(x, y: Integer);
-    procedure setlleg(x, y: Integer);
-    procedure setbodyup(x, y: Integer);
-    procedure draw(dest: TCanvas; x, y: Integer);
-    function FindThirdPoint(var P0, P1: TPoint; a, b: double;
-      clockwise: boolean; gravity: boolean): TPoint;
-    procedure DrawWithGuitar(guitarsource: TBitmap; x, y: Integer);
-  private
-    procedure redraw();
-  end;
-
-  Tframe = 0 .. 100;
-
-  TGuitar = class
-    Body: TArray<TPoint>;
-    bridge: TArray<TPoint>;
-    Grif: TArray<TPoint>;
-    Head: TArray<TPoint>;
-    Hole: TArray<TPoint>;
-    Peg: TArray<TPoint>;
-    Line: TArray<TPoint>;
-    lineframe: Tframe;
-    cosa, sina: double;
-    source: TBitmap;
-
-  const
-    xc = 100;
-    yc = 100;
-  public
-    constructor Create;
-    procedure draw(dest: TCanvas; x, y: Integer; newlineframe: Integer);
-    procedure rotate(angle: double);
-    procedure changelineframe(frame: Integer);
-
-  private
-    procedure redraw();
-    procedure newpoints();
-  end;
-
+const
+  Siz = 5;
 var
-  point1, point2, point3: TPoint;
-  t: Integer;
-  h, h2: THuman;
-  g: TGuitar;
-  guitx, guity, CL: Integer;
-  guitangle: double;
   Form4: TForm4;
-  Bmp, Bmp1 : TBitMap;
-  ii : Integer;
+  Bmp, Bmp1, Bmp2 : TBitMap;
+  FonRectStatic, UpRect, SmallFonRect : TRect;
   Col: array[1..6] of TColor;
-  UpRect, FonRect1, FonRect2, LRect, RRect : TRect;
-  FVysotsky, FTitres: TextFile;
-  Line: string;
-  FL : Boolean;
-  lhandpos: integer;
-
+  SH, SW : Real;
+  ii : Integer;
 implementation
 
 {$R *.dfm}
 
-Procedure Circles(Xc, Yc : Integer; BmpX : TBitMap);
+Procedure TForm4.CloseOpenShtorki(XPL, YPL : Integer; CL : Boolean);
+var
+  CountForShtorki, k : Integer;
+begin
+  if not CL then
+    k := 100
+  else
+    begin
+      k := 0;
+      if (TimerFonMotion.Tag > 860) and (ii = 0) then
+        begin
+          TimerFonMotion.Tag := 0;
+          inc(ii);
+        end;
+    end;
+
+  CountForShtorki := TimerFonMotion.Tag;
+  if CountForShtorki <= Trunc(1920 / 2) - k then
+    begin
+      Bmp.Canvas.Pen.Color := clBlack;
+      Bmp.Canvas.Brush.Color := $00020062;
+      if not CL then
+        begin
+          Bmp.Canvas.Rectangle(XPL, YPL + Trunc(40 * SH), XPL + Trunc(((1920 / 2) - CountForShtorki) * SW), YPL + Trunc((1080 - 430) * SH));   //Раздвигающиеся шторки
+          Bmp.Canvas.Rectangle(Trunc(((1920 / 2) + CountForShtorki) * SW) + XPL, YPL + Trunc(40 * SH), XPL + Trunc(1920 * SW), YPL + Trunc((1080 - 430) * SH));
+        end
+      else
+        begin
+          Bmp.Canvas.Rectangle(XPL, YPL + Trunc(40 * SH), XPL + Trunc(CountForShtorki * SW){ + Trunc(((1920 / 2) - CountForShtorki) * SW)}, YPL + Trunc((1080 - 430) * SH));   //Раздвигающиеся шторки
+          Bmp.Canvas.Rectangle(XPL + Trunc(1920 * SW), YPL + Trunc(40 * SH), XPL + Trunc((1920 - CountForShtorki) * SW), YPL + Trunc((1080 - 430) * SH));
+        end;
+      inc(CountForShtorki, 4);
+
+      if (CountForShtorki > Trunc(1920 / 2) - k) and (k = 0) and (ii = 1) then
+        Close;
+
+      TimerFonMotion.Tag := CountForShtorki;
+    end
+  else
+    begin
+      if (CountForShtorki > 10000) then
+        CountForShtorki := 4001
+      else
+        inc(CountForShtorki);
+      TimerFonMotion.Tag := CountForShtorki;
+    end;
+end;
+
+Procedure Circles(Xc, Yc : Integer);
 var
   i, Radius, N, X1, X2, Y1, Y2: Integer;
   alpha : double;
 begin
-  Radius := Random(4) + 26;
+  Radius := Trunc((Random(4) + 26) * SW);
   N := Random(3) + 35;
   for i := 0 to N - 1 do
     begin
@@ -128,553 +97,219 @@ begin
       X2 := Round(Xc + Radius * cos(alpha));
       Y2 := Round(Yc + Radius * sin(alpha));
 
-      BmpX.Canvas.MoveTo(X1, Y1);
-      BmpX.Canvas.LineTo(X2, Y2);
+      Bmp.Canvas.MoveTo(X1, Y1);
+      Bmp.Canvas.LineTo(X2, Y2);
     end;
 end;
 
-Procedure DoubtfulProcedure(ColorLocal : TColor; i, j : Integer);
+procedure TForm4.BitmapCreate(var BmpX : TBitmap);
 begin
-  Bmp.Canvas.Pen.Color := ColorLocal;
-  Bmp.Canvas.MoveTo(i, 0);
-  Bmp.Canvas.LineTo(j, 400);
+  BmpX := TBitmap.Create;
+  BmpX.Width := Image1.Width;
+  BmpX.Height := Image1.Height;
+  BmpX.Canvas.Pen.Color := clGray;
+  BmpX.Canvas.Brush.Color := clGray;
+  BmpX.Canvas.FillRect(Rect(0, 0, BmpX.Width, BmpX.Height));      //Фон
+  BmpX.Canvas.Pen.Color := clWhite;
+  BmpX.Canvas.Brush.Color := $00460300;
+  BmpX.Canvas.Ellipse(0, Trunc((1080 - 405) * SH), Trunc(1920 * SW), Trunc((1080 - 155) * SH));
+  BmpX.Canvas.Pen.Color := $00460300;
+  BmpX.Canvas.Brush.Color := $00460300;
+  BmpX.Canvas.Rectangle(0, Trunc((1080 - 460) * SH), Trunc(1920 * SW), Trunc((1080 - 280) * SH));
+  BmpX.Canvas.Pen.Color := clWhite;
+  BmpX.Canvas.Brush.Color := $00280200;
+  BmpX.Canvas.Ellipse(0, Trunc((1080 - 490) * SH), Trunc(1920 * SW), Trunc((1080 - 370) * SH));
+  BmpX.Canvas.Pen.Color := $00280200;
+  BmpX.Canvas.Brush.Color := $00280200;
+  BmpX.Canvas.Rectangle(0, Trunc((1080 - 680) * SH), Trunc(1920 * SW), Trunc((1080 - 430) * SH));
+  BmpX.Canvas.Pen.Color := clBlack;
+  BmpX.Canvas.Brush.Color := $00020062;
+  BmpX.Canvas.Rectangle(0, Trunc(50 * SH), Trunc(50 * SW), Trunc((1080 - 430) * SH));      //Левая шторка
+  BmpX.Canvas.Rectangle(Trunc((1920 - 50) * SW), Trunc(50 * SH), Trunc(1920 * SW), Trunc((1080 - 430) * SH));//Правая шторка
+  BmpX.Canvas.Pen.Color := clBlack;
+  BmpX.Canvas.Brush.Color := $00020062;
+  BmpX.Canvas.Rectangle(0, 0, Trunc(1920 * SW), Trunc(40 * SH));
 end;
 
+Procedure DoubtfulProcedure(ColorLocal : TColor; i, j, XPL, YPL : Integer);
+begin
+  Bmp.Canvas.Pen.Color := ColorLocal;
+  Bmp.Canvas.MoveTo(Trunc(i * SW) + XPL, Trunc(40 * SH) + YPL);
+  Bmp.Canvas.LineTo(Trunc(j * SW) + XPL, Trunc((1080 - 680) * SH) + YPL);
+end;
 
 procedure TForm4.FormCreate(Sender: TObject);
 begin
-MediaPlayer1.FileName :=
-    'C:\Users\User\Desktop\Лабы ОАиП\Лаба мультик\Songs\Vysotsky.mp3';
-  MediaPlayer1.Open;
-  MediaPlayer1.Play;
-Line:='';
-AssignFile(FVysotsky,
-    ExtractFilePath(Application.ExeName)+'Lyrics\Vysotsky.txt');
-  Reset(FVysotsky);
-FL := True;
-Bmp := TBitmap.Create;
-Bmp1 := TBitmap.Create;
-Bmp1.Width := ImageScene.Width;
-Bmp1.Height := ImageScene.Height;
-Bmp1.Canvas.Pen.Color := clGray;
-Bmp1.Canvas.Brush.Color := clGray;
-Bmp1.Canvas.FillRect(Rect(0, 0, Bmp1.Width, Bmp1.Height));
-Bmp1.Canvas.Pen.Color := clWhite;
-Bmp1.Canvas.Brush.Color := $00460300;
-Bmp1.Canvas.Ellipse(0, Screen.Height - 405, Screen.Width, Screen.Height - 155);
-Bmp1.Canvas.Pen.Color := $00460300;
-Bmp1.Canvas.Brush.Color := $00460300;
-Bmp1.Canvas.Rectangle(0, Screen.Height - 460, Screen.Width, Screen.Height - 280);
-Bmp1.Canvas.Pen.Color := clWhite;
-Bmp1.Canvas.Brush.Color := $009FEE9B;
-Bmp1.Canvas.Ellipse(0, Screen.Height - 490, Screen.Width, Screen.Height - 370);
-Bmp1.Canvas.Pen.Color := $009FEE9B;         //$00A8D6E1
-Bmp1.Canvas.Brush.Color := $009FEE9B;
-Bmp1.Canvas.Rectangle(0, Screen.Height - 680, Screen.Width, Screen.Height - 430);
-FonRect1 := Rect(0, Screen.Height - 680, Screen.Width, Screen.Height);
-
-Bmp1.Canvas.Pen.Color := clBlack;
-Bmp1.Canvas.Brush.Color := $00020062;
-Bmp1.Canvas.Rectangle(0, 50, 50, Screen.Height - 430);
-LRect := Rect(0, 50, 50, Screen.Height - 430);        //Шторки
-
-t := 0;
-  guitangle := -0.4;
-  guitx := 20;
-  guity := -30;
-  h := THuman.Create();
-  g := TGuitar.Create();
-  h2 := THuman.Create();
-  g.rotate(guitangle);
-  h.setbodyup(10, -70);
-  h.setlleg(20, 100);
-  h.setrleg(-20, 100);
-  h.setlarm(guitx + Round(60 * cos(guitangle)),
-    guity + Round(60 * sin(guitangle)));
-  h.DrawWithGuitar(g.source, guitx, guity);
-
-
-Bmp1.Canvas.Rectangle(Screen.Width - 60, 50, Screen.Width, Screen.Height - 430);
-RRect := Rect(Screen.Width - 60, 50, Screen.Width, Screen.Height - 430);
-Bmp1.Canvas.Pen.Color := clBlack;
-Bmp1.Canvas.Brush.Color := $00020062;
-Bmp1.Canvas.Rectangle(0, 0, Screen.Width, 40);
-UpRect := Rect(0, 0, Screen.Width, 40);
-ii := 0;
-
-
+  SH := {766}Screen.Height / 1080 / Siz;
+  SW := {1378}Screen.Width / 1920 / Siz;
+  Bmp := TBitmap.Create;
+  Bmp.Width := Image1.Width;
+  Bmp.Height := Image1.Height;
+  BitmapCreate(Bmp2);
+  SmallFonRect := Rect(0, Trunc(40 * SH), Trunc(1920 * SW), Trunc(1080 * SH));
+  SW := SW * Siz;
+  SH := SH * Siz;
+  BitmapCreate(Bmp1);
+  TimerFonMotion.Tag := 0;
+  ii := 0;
 end;
 
-procedure TForm4.TimerHandTimer(Sender: TObject);
-  var
-  rhandframe, cosrh, swinglength: double;
-  framelength, l: Integer;
-begin
-  Inc(t);
-
-  framelength := 15;
-  l := 6;
-
-  swinglength := 0.5;
-  rhandframe := (t mod framelength) / framelength;
-  if rhandframe < swinglength then
-    cosrh := cos(rhandframe * PI / (swinglength))
-  else
-    cosrh := -cos((rhandframe - swinglength) * PI / (1 - swinglength));
-  h.setrarm(guitx + Round(8 * cos(guitangle)),
-    guity + -1 + Round(8 * sin(guitangle)) - Round(l * cosrh));
-  h.DrawWithGuitar(g.source, guitx, guity);
-end;
-
-procedure TForm4.TitresTimer(Sender: TObject);
-begin
-  Canvas.Textout(50, 50, Line);
-end;
-
-procedure TForm4.PauseTimer(Sender: TObject);
-begin
-  Pause.Enabled:=False;
-  Play.Enabled:=True;
-end;
-
-function TForm4.DisplayNextLineVysotsky:string;
-var TempLine: string;
-begin
-  if not Eof(FVysotsky) then
-  begin
-    lhandpos:=(random(2)+4)*14;
-    h.setlarm(guitx+Round(lhandpos*cos(guitangle)),guity+Round(lhandpos*sin(guitangle)));
-    h.DrawWithGuitar(g.source, guitx, guity);
-    Readln(FVysotsky, TempLine);
-    if TempLine<>'' then
-    Result:= TempLine
-    else
-    Result:=Line;
-  end
-  else
-  begin
-    CloseFile(FVysotsky);
-    Play.Enabled := False;
-    TimerHand.Enabled:=False;
-    Titres.Enabled:=True;
-    ii:=0;
-    Fl:= False;
-    AssignFile(FTitres, ExtractFilePath(Application.ExeName)+'Lyrics\Vysotsky.txt');
-  end;
-end;
-
-procedure TForm4.PlayTimer(Sender: TObject);
-begin
-  Line:=DisplayNextLineVysotsky;
-end;
-
-procedure TForm4.TimerColorChangeTimer(Sender: TObject);
+procedure Columns(X, Y, XPL, YPL : Integer);
 var
-  ind : Integer;
-begin
-  for ind := Low(Col) to High(Col) do
-    Col[ind] := RGB(Random(255), Random(255), Random(255));
+  i : Integer;
+begin         //$003E3E31
+  i := Random(2);
+  Bmp.Canvas.Pen.Color := $0036362C;         //$003E3E31
+  Bmp.Canvas.Brush.Color := $0036362C;
+  Bmp.Canvas.Ellipse(Trunc((X + i) * SW) + XPL, Trunc((Y + i) * SH) + YPL, Trunc((X + 50 + i) * SW) + XPL, Trunc((Y + 330 + i) * SH) + YPL);
+  Bmp.Canvas.Ellipse(Trunc((X + 100 + i) * SW) + XPL, Trunc((Y + i) * SH) + YPL, Trunc((X + 150 + i) * SW) + XPL, Trunc((Y + 330 + i) * SH) + YPL);
+  Bmp.Canvas.Pen.Color := $003E3E31;         //$0036362C
+  Bmp.Canvas.Brush.Color := $003E3E31;
+  Bmp.Canvas.Rectangle(Trunc((X + 25 + i) * SW) + XPL, Trunc((Y + i) * SH) + YPL, Trunc((X + 125 + i) * SW) + XPL, Trunc((Y + 330 + i) * SH) + YPL);
+
+  Bmp.Canvas.Pen.Color := clBlack;
+  Bmp.Canvas.Brush.Color := $00545443;
+  Bmp.Canvas.Pen.Width := Trunc((12 + Random(6)) * SW);
+  Bmp.Canvas.Ellipse(Trunc((X + 40) * SW) + XPL, Trunc((Y + 40) * SH) + YPL, Trunc((X + 110) * SW) + XPL, Trunc(((Y + 40) * SH) + 70 * SW) + YPL);
+  Bmp.Canvas.Ellipse(Trunc((X + 40) * SW) + XPL, Trunc((Y + 190) * SH) + YPL, Trunc((X + 110) * SW) + XPL, Trunc(((Y + 190) * SH) + 70 * SW) + YPL);
+
+  Bmp.Canvas.Pen.Width := 1;
+  Bmp.Canvas.MoveTo(Trunc((X + 25 + i) * SW) + XPL, Trunc((Y + 1 + i) * SH) + YPL);
+  Bmp.Canvas.LineTo(Trunc((X + 125 + i) * SW) + XPL, Trunc((Y + 1 + i) * SH) + YPL);
+  Bmp.Canvas.MoveTo(Trunc((X + 25 + i) * SW) + XPL, Trunc((Y + 330 - 1 + i) * SH) + YPL);
+  Bmp.Canvas.LineTo(Trunc((X + 125 + i) * SW) + XPL, Trunc((Y + 330 - 1 + i) * SH) + YPL);
+
+  Bmp.Canvas.Pen.Color := $0022221C;
+  Circles(Trunc((X + 75) * SW) + XPL, Trunc((Y + 40) * SH + 35 * SW) + YPL);
+  Circles(Trunc((X + 75) * SW) + XPL, Trunc((Y + 190) * SH + 35 * SW) + YPL);
 end;
+
+
+procedure GradientLinesColor(XPL, YPL : Integer);
+var
+  i, k : Integer;
+begin
+    Bmp.Canvas.Pen.Color := clGray;
+    Bmp.Canvas.Brush.Color := clGray;
+    Bmp.Canvas.Font.Name := 'Matura MT Script Capitals';
+    Bmp.Canvas.Font.Size := Trunc(44 * SW);
+    Bmp.Canvas.Font.Color := Col[6];
+    Bmp.Canvas.TextOut(Trunc(130 * SW) + XPL, Trunc(170 * SH) + YPL, 'ROCK');
+    i := 0;
+    while i <= 1920 do
+      begin
+        if i <= Trunc(1920 / 2) then
+          begin
+            DoubtfulProcedure(Col[1], i + 50, Trunc(1920 / 2) - i + 50, XPL, YPL);
+            DoubtfulProcedure(Col[2], Trunc(1920 / 2) + i - 50, 1920 - i - 50, XPL, YPL);
+          end;
+        if (i + 60 > 1920  - i - 60) then
+          k := -60
+        else
+          k := 60;
+        DoubtfulProcedure(Col[3], i + k, 1920 - i - k, XPL, YPL);
+        Inc(i, 20);
+      end;
+   i := 0;
+   while i <= 1920 do
+     begin
+       if (i + 50 > 1920 - i - 50) then
+         k := -50
+       else
+         k := 50;
+       DoubtfulProcedure(Col[4], i + k, 1920 - i - k, XPL, YPL);
+       if i <= 360 then
+         begin
+           Bmp.Canvas.Pen.Color := Col[5];
+           Bmp.Canvas.MoveTo(Trunc(50 * SW) + XPL, Trunc((i + 40) * SH) + YPL);
+           Bmp.Canvas.LineTo(Trunc((1920 - 50) * SW) + XPL, Trunc((1080 - 680 - i) * SH) + YPL);
+         end;
+       Inc(i, 20);
+     end;
+end;
+
+Procedure TForm4.DrawFons(Size, XPL, YPL : Integer; BmpX : TBitmap);
+var
+  i : Integer;
+  Point : TPoint;
+begin
+  XPL := Trunc(XPL * SW);
+  YPL := Trunc(YPL * SH);
+
+  SW := SW / Size;
+  SH := SH / Size;
+
+  UpRect := Rect(0, 0, Trunc(1920 * SW), Trunc(40 * SH));
+  FonRectStatic := Rect(0, Trunc(40 * SH), Trunc(1920 * SW), Trunc(1080 * SH));
+  if (TimerFonMotion.Tag mod 45 = 0) or (TimerFonMotion.Tag = Trunc(1920 / 2) - 96) then
+    begin
+      for i := Low(Col) to High(Col) do
+        Col[i] := RGB(Random(255), Random(255), Random(255));
+    end;
+  Bmp.Canvas.CopyRect(Rect(XPL, YPL + Trunc(40 * SH), XPL + Trunc(1920 * SW), YPL + Trunc(1080 * SH)), BmpX.Canvas, FonRectStatic);
+
+  GradientLinesColor(XPL, YPL);
+
+  Bmp.Canvas.Pen.Color := clBlack;
+  Bmp.Canvas.Brush.Color := $00020062;
+  Bmp.Canvas.Ellipse(Trunc(-50 * SW) + XPL, Trunc(-200 * SH) + YPL, Trunc(100 * SW) + XPL, Trunc(300 * SH) + YPL);
+  Bmp.Canvas.Ellipse(Trunc((1920 + 50) * SW) + XPL, Trunc(-200 * SH) + YPL, Trunc((1920 - 100) * SW) + XPL, Trunc(300 * SH) + YPL);
+
+  Bmp.Canvas.CopyRect(Rect(XPL, YPL, Trunc(1920 * SW) + XPL, YPL + Trunc(40 * SH)), BmpX.Canvas, UpRect);
+
+  Columns(55, 1080 - 780, XPL, YPL);
+  Columns(1920 - 205, 1080 - 780, XPL, YPL);
+
+  CloseOpenShtorki(XPL, YPL, False);
+
+  Columns(2, 1080 - 485, XPL, YPL);
+  Columns(1920 - 152, 1080 - 485, XPL, YPL);
+  ////Телевизор
+  if BmpX <> Bmp1 then
+    begin
+      Bmp.Canvas.Pen.Color := clWhite;
+      Bmp.Canvas.Brush.Color := clWhite;
+      Bmp.Canvas.Rectangle(XPL - Trunc(80 * Sw), YPL - Trunc(80 * SH), XPL + Trunc(2000 * SW), YPL);
+      Bmp.Canvas.Rectangle(XPL - Trunc(80 * Sw), YPL - Trunc(80 * SH), XPL, YPL + Trunc(1160 * SH));
+      Bmp.Canvas.Rectangle(XPL  + Trunc(1920 * SW), YPL - Trunc(80 * SH), XPL + Trunc(2000 * SW), YPL + Trunc(1160 * SH));
+      Bmp.Canvas.Rectangle(XPL - Trunc(80 * Sw), YPL + Trunc(1080 * SH), XPL + Trunc(2000 * SW), YPL + Trunc(1160 * SH));
+      Bmp.Canvas.Rectangle(XPL - Trunc(80 * Sw), YPL - Trunc(195 * SH), XPL + Trunc(2000 * SW), YPL - Trunc(80 * SH));
+      Bmp.Canvas.MoveTo(XPL - Trunc(80 * Sw), YPL - Trunc(195 * SH));
+      Bmp.Canvas.LineTo(XPL + Trunc(2000 * SW), YPL - Trunc(195 * SH));
+      Bmp.Canvas.LineTo(XPL + Trunc(2000 * SW), YPL + Trunc(1160 * SH));
+      Bmp.Canvas.Pen.Color := $00E2E2E2;
+      Bmp.Canvas.LineTo(XPL + Trunc((1920 / 2 + 100) * SW), YPL + Trunc(1160 * SH));
+      Bmp.Canvas.LineTo(XPL + Trunc((1920 / 2 + 550) * SW), YPL + Trunc(1860 * SH));
+      Bmp.Canvas.LineTo(XPL + Trunc((1920 / 2) * SW), YPL + Trunc(1175 * SH));
+      Bmp.Canvas.LineTo(XPL + Trunc((1920 / 2 - 100) * SW), YPL + Trunc(1700 * SH));
+      Bmp.Canvas.LineTo(XPL + Trunc((1920 / 2 - 70) * SW), YPL + Trunc(1175 * SH));
+      Bmp.Canvas.LineTo(XPL + Trunc((1920 / 2 - 350) * SW), YPL + Trunc(1860 * SH));
+      Bmp.Canvas.LineTo(XPL + Trunc((1920 / 2 - 170) * SW), YPL + Trunc(1160 * SH));
+      Bmp.Canvas.Pen.Color := clBlack;
+      Bmp.Canvas.MoveTo(XPL - Trunc(80 * Sw), YPL - Trunc(195 * SH));
+      Bmp.Canvas.LineTo(XPL - Trunc(80 * SW), YPL + Trunc(1160 * SH));
+      Bmp.Canvas.LineTo(XPL + Trunc((1920 / 2 - 170) * SW), YPL + Trunc(1160 * SH));
+      Bmp.Canvas.Pen.Color := $00E2E2E2;
+      Bmp.Canvas.LineTo(XPL + Trunc((1920 / 2 + 550) * SW), YPL + Trunc(1160 * SH));
+      Bmp.Canvas.Brush.Color := clBlack;
+      Bmp.Canvas.FloodFill(XPL + Trunc((1920 / 2) * SW), YPL + Trunc(1165 * SH), $00E2E2E2, fsBorder);
+    end;
+  ////
+  SW := SW * Size;
+  SH := SH * Size;
+
+  Image1.Picture.Bitmap.Assign(Bmp);
+end;
+
 
 procedure TForm4.TimerFonMotionTimer(Sender: TObject);
 var
-  i, j, Radius, Xc, Yc, N, X1, Y1, X2, Y2 : Integer;
-  alpha : double;
+  CountForShtorki, i : Integer;
 
 begin
-    if FL then
-      CL := 872
-    else
-      CL := Trunc(Screen.Width / 2);
-    Bmp.Width := ImageScene.Width;
-    Bmp.Height := ImageScene.Height;
-    Bmp.Canvas.Pen.Color := clGray;
-    Bmp.Canvas.Brush.Color := clGray;
-    Bmp.Canvas.Rectangle(0, 0, Bmp.Width, Bmp.Height);
-    Bmp.Canvas.Font.Name := 'Arial';
-    Bmp.Canvas.Font.Size := 13;
-    i := 0;
-    while i <= Screen.Width do
-      begin
-        if i <= Trunc(Screen.Width / 2) then
-          begin
-            DoubtfulProcedure(Col[1], i, Trunc(Screen.Width / 2) - i);
-            DoubtfulProcedure(Col[2], Trunc(Screen.Width / 2) + i, Screen.Width - i);
-          end;
-        DoubtfulProcedure(Col[3], i + 10, Screen.Width - i - 10);
-        DoubtfulProcedure(Col[4], i, Screen.Width - i);
-        if i <= 400 then
-          begin
-            Bmp.Canvas.Pen.Color := Col[5];
-            Bmp.Canvas.MoveTo(0, i);
-            Bmp.Canvas.LineTo(Screen.Width, Screen.Height - 680 - i);
-          end;
-        Inc(i, 20);
-      end;
-    Bmp.Canvas.CopyRect(FonRect1, Bmp1.Canvas, FonRect1);
-
-    Bmp.Canvas.Pen.Color := $003E3E31;         //$00A8D6E1
-    Bmp.Canvas.Brush.Color := $003E3E31;
-    i := Random(2);
-    Bmp.Canvas.Ellipse(50 + i, Screen.Height - 810 + i, 100 + i, Screen.Height - 480  + i);    //
-    Bmp.Canvas.Ellipse(150 + i, Screen.Height - 810 + i, 200 + i, Screen.Height - 480  + i);   //Левая колонка фон
-    Bmp.Canvas.Rectangle(75 + i, Screen.Height - 810 + i, 175 + i, Screen.Height - 480 + i);  //
-    i := Random(2);
-    Bmp.Canvas.Ellipse(Screen.Width - 210 + i, 270 + i, Screen.Width - 160 + i,   Screen.Height - 480 + i);  //
-    Bmp.Canvas.Ellipse(Screen.Width - 110 + i, 270 + i, Screen.Width - 60  + i,   Screen.Height - 480 + i);  //Правая колонка фон
-    Bmp.Canvas.Rectangle(Screen.Width - 185 + i, 270 + i, Screen.Width - 85 + i,   Screen.Height - 480 + i);//
-
-
-    Bmp.Canvas.Pen.Color := clBlack;
-    Bmp.Canvas.Brush.Color := clGray;
-    Bmp.Canvas.Pen.Width := 12 + Random(6);
-    Bmp.Canvas.Ellipse(90, Screen.Height - 770, 160, Screen.Height - 700);
-    Bmp.Canvas.Ellipse(90, Screen.Height - 620, 160, Screen.Height - 550);
-    Bmp.Canvas.Ellipse(Screen.Width - 170, Screen.Height - 770,  Screen.Width - 100, Screen.Height - 700);   //Êðóãè êîëîíêè ñïðàâà (âåðõ)
-    Bmp.Canvas.Ellipse(Screen.Width - 170, Screen.Height - 620,  Screen.Width - 100, Screen.Height - 550);
-
-    Bmp.Canvas.Pen.Width := 1;
-    Bmp.Canvas.Pen.Color := $003E3E31;
-    Circles(125, Screen.Height - 735, Bmp);
-    Circles(125, Screen.Height - 585, Bmp);
-    Circles(Screen.Width - 135, Screen.Height - 735, Bmp);
-    Circles(Screen.Width - 135, Screen.Height - 585, Bmp);
-    h.draw(Bmp.canvas, Screen.Width div 2, Screen.Height div 2);
-
-    if ii <= CL then
-      begin
-        inc(ii, 4);
-        if Fl then
-        begin
-        Bmp.Canvas.Pen.Color := clBlack;
-        Bmp.Canvas.Brush.Color := $00020062;
-        Bmp.Canvas.Rectangle(0, 40, Trunc(Screen.Width / 2) - ii, Screen.Height - 430);   //Раздвигающиеся шторки
-        Bmp.Canvas.Rectangle(Trunc(Screen.Width / 2) + ii, 40, Screen.Width, Screen.Height - 430);
-        end
-        else
-        begin
-        Bmp.Canvas.Pen.Color := clBlack;
-        Bmp.Canvas.Brush.Color := $00020062;
-        Bmp.Canvas.Rectangle(0, 40, ii, Screen.Height - 430);   //Раздвигающиеся шторки
-        Bmp.Canvas.Rectangle(Screen.Width, 40, Screen.Width - ii, Screen.Height - 430);
-        end;
-        if ii > Trunc(Screen.Width / 2)  then
-          TimerFonMotion.Enabled := False
-      end
-    else
-      begin
-        Bmp.Canvas.CopyRect(LRect, Bmp1.Canvas, LRect);
-        Bmp.Canvas.CopyRect(RRect, Bmp1.Canvas, RRect);
-        Bmp.Canvas.Pen.Color := clBlack;
-        Bmp.Canvas.Brush.Color := $00020062;
-        Bmp.Canvas.Ellipse(-50, -200, 100, 300);
-        Bmp.Canvas.Ellipse(Screen.Width + 50, -200, Screen.Width - 100, 300);
-      end;
-  Bmp.Canvas.Font.Color:=clBlack;
-  Bmp.Canvas.Brush.Color := clWhite;
-  Bmp.Canvas.CopyRect(UpRect, Bmp1.Canvas, UpRect);
-  if Line<>'' then
-  Bmp.Canvas.Ellipse(ClientWidth div 2 - 80, 100, ClientWidth div 2 + 380, 230);
-  Bmp.Canvas.TextOut(950, 140, Line);
-
-  ImageScene.Picture.Bitmap.Assign(Bmp);
-
+  DrawFons(1, 0, 0, Bmp1);
+  DrawFons(Siz, 1280, 600, Bmp2);
+  DrawFons(Siz, 230, 600, Bmp2);
 end;
 
-{ THuman }
-
-constructor THuman.Create;
-begin
-  inherited;
-  headr := 20;
-  bodyup := Point(0, -80);
-  Bodydown := Point(0, 0);
-  rightarm := Point(10, -30);
-  leftarm := Point(50, -90);
-  rightleg := Point(-30, 90);
-  leftleg := Point(+30, 90);
-  source := TBitmap.Create(400, 400);
-  source.Transparent := true;
-  source.Canvas.Pixels[0, 0]:=clWhite;
-  redraw();
-end;
-
-function THuman.FindThirdPoint(var P0, P1: TPoint; a, b: double;
-  clockwise: boolean; gravity: boolean): TPoint;
-const
-  sign: array [boolean] of Integer = (-1, 1);
-var
-  c, c1, cos1, cosc, sinc: double;
-  x, y: double;
-begin
-  c1 := sqrt((P0.x - P1.x) * (P0.x - P1.x) + (P0.y - P1.y) * (P0.y - P1.y));
-  if (c1 > a + b) or (b > a + c1 + 0.1) or (a > b + c1) then
-  begin
-    c := a + b;
-  end
-  else
-    c := c1;
-  cos1 := (a * a + c * c - b * b) / (2 * a * c);
-  sinc := (P1.y - P0.y) / c1;
-  cosc := (P1.x - P0.x) / c1;
-  x := a * cos1;
-  y := a * sqrt(1 - cos1 * cos1);
-  if not gravity then
-    y := y * sign[clockwise]
-  else
-    y := y * sign[cosc > 0];
-  result.x := P0.x + Round(x * cosc - y * sinc);
-  result.y := P0.y + Round(x * sinc + y * cosc);
-end;
-
-procedure THuman.draw(dest: TCanvas; x, y: Integer);
-begin
-  dest.draw(x - xc, y - yc, source);
-end;
-
-procedure THuman.DrawWithGuitar(guitarsource: TBitmap; x, y: Integer);
-var
-  center, temp: TPoint;
-
-begin
-  center.x := xc;
-  center.y := yc;
-  with source.canvas do
-  begin
-    brush.color := clWhite;
-    pen.color := clWhite;
-    pen.Width := linewidth;
-    Rectangle(-1, -1, 400, 400);
-    brush.color := RGB(255, 254, 255);
-    pen.color := clBlack;
-    PolyLine([center + Bodydown, center + bodyup]);
-    Ellipse(Rect(center + bodyup + Point(-headr, -headr * 2),
-      center + bodyup + Point(headr, 0)));
-    PolyLine([center + Bodydown, center + FindThirdPoint(Bodydown, rightleg,
-      leg1, leg2, true, false), center + rightleg]);
-    PolyLine([center + Bodydown, center + FindThirdPoint(Bodydown, leftleg,
-      leg1, leg2, false, false), center + leftleg]);
-    temp := center + FindThirdPoint(bodyup, leftarm, arm1, arm2, false, true);
-    PolyLine([center + bodyup, temp]);
-    PolyLine([temp, center + leftarm]);
-    draw(x - 100 + xc, y - 100 + yc, guitarsource);
-    PolyLine([center + bodyup, center + FindThirdPoint(bodyup, rightarm, arm1,
-      arm2, true, false), center + rightarm]);
-    PolyLine([center + leftarm, Point((temp.x + center.x + leftarm.x) div 2,
-      (temp.y + center.y + leftarm.y) div 2)]);
-
-  end;
-end;
-
-procedure THuman.redraw();
-
-var
-  center: TPoint;
-begin
-  center.x := xc;
-  center.y := yc;
-  with source.canvas do
-  begin
-    brush.color := clWhite;
-    pen.color := clWhite;
-    pen.Width := linewidth;
-    Rectangle(-1, -1, 300, 300);
-    brush.color := RGB(255, 254, 255);
-    pen.color := clBlack;
-    PolyLine([center + Bodydown, center + bodyup]);
-    Ellipse(Rect(center + bodyup + Point(-headr, -headr * 2),
-      center + bodyup + Point(headr, 0)));
-    PolyLine([center + bodyup, center + FindThirdPoint(bodyup, rightarm, arm1,
-      arm2, true, false), center + rightarm]);
-    PolyLine([center + bodyup, center + FindThirdPoint(bodyup, leftarm, arm1,
-      arm2, false, false), center + leftarm]);
-    PolyLine([center + Bodydown, center + FindThirdPoint(Bodydown, rightleg,
-      leg1, leg2, true, false), center + rightleg]);
-    PolyLine([center + Bodydown, center + FindThirdPoint(Bodydown, leftleg,
-      leg1, leg2, false, false), center + leftleg]);
-  end;
-end;
-
-procedure THuman.setbodyup(x, y: Integer);
-begin
-  bodyup.x := x;
-  bodyup.y := y;
-end;
-
-procedure THuman.setlarm(x, y: Integer);
-var
-  c: double;
-begin
-  c := sqrt((x - bodyup.x) * (x - bodyup.x) + (y - bodyup.y) * (y - bodyup.y));
-  if c > arm1 + arm2 then
-  begin
-    x := bodyup.x + Round((x - bodyup.x) * (arm1 + arm2) / c);
-    y := bodyup.y + Round((y - bodyup.y) * (arm1 + arm2) / c);
-  end;
-  leftarm.x := x;
-  leftarm.y := y;
-  redraw();
-end;
-
-procedure THuman.setlleg(x, y: Integer);
-var
-  c: double;
-begin
-  c := sqrt((x - Bodydown.x) * (x - Bodydown.x) + (y - Bodydown.y) *
-    (y - Bodydown.y));
-  if c > leg1 + leg2 then
-  begin
-    x := Bodydown.x + Round((x - Bodydown.x) * (arm1 + arm2) / c);
-    y := Bodydown.y + Round((y - Bodydown.y) * (arm1 + arm2) / c);
-  end;
-  leftleg.x := x;
-  leftleg.y := y;
-  redraw();
-end;
-
-procedure THuman.setrarm(x, y: Integer);
-var
-  c: double;
-begin
-  c := sqrt((x - bodyup.x) * (x - bodyup.x) + (y - bodyup.y) * (y - bodyup.y));
-  if c > arm1 + arm2 then
-  begin
-    x := bodyup.x + Round((x - bodyup.x) * (arm1 + arm2) / c);
-    y := bodyup.y + Round((y - bodyup.y) * (arm1 + arm2) / c);
-  end;
-  rightarm.x := x;
-  rightarm.y := y;
-  redraw();
-end;
-
-procedure THuman.setrleg(x, y: Integer);
-var
-  c: double;
-begin
-  c := sqrt((x - Bodydown.x) * (x - Bodydown.x) + (y - Bodydown.y) *
-    (y - Bodydown.y));
-  if c > leg1 + leg2 then
-  begin
-    x := Bodydown.x + Round((x - Bodydown.x) * (arm1 + arm2) / c);
-    y := Bodydown.y + Round((y - Bodydown.y) * (arm1 + arm2) / c);
-  end;
-  rightleg.x := x;
-  rightleg.y := y;
-  redraw();
-end;
-
-constructor TGuitar.Create;
-begin
-  inherited;
-  newpoints();
-  lineframe := 0;
-  sina := 0;
-  cosa := 1;
-  source := TBitmap.Create(200, 200);
-  source.Transparent := true;
-  redraw();
-end;
-
-procedure TGuitar.redraw();
-
-  function add(const a: TArray<TPoint>; x1, y1: Integer; flip: boolean)
-    : TArray<TPoint>;
-  var
-    j, x, y: Integer;
-  begin
-    Setlength(result, Length(a));
-    for j := Low(a) to High(a) do
-    begin
-      result[j] := a[j] + Point(x1, y1 - 2 * (a[j].y + y1) * Ord(flip));
-      x := Round(result[j].x * cosa - result[j].y * sina);
-      y := Round(result[j].x * sina + result[j].y * cosa);
-      result[j] := Point(x, y) + Point(xc, yc);
-    end;
-  end;
-
-var
-  i, k: Integer;
-begin
-  with source do
-  begin
-    canvas.pen.color := clWhite;
-    canvas.brush.color := clWhite;
-    canvas.Rectangle(0, 0, 200, 200);
-    canvas.pen.color := clBlack;
-    canvas.PolyBezier(add(Body, 0, 0, false));
-
-    canvas.brush.color := RGB(47, 27, 28);
-    canvas.Polygon(add(bridge, 0, 0, false));
-
-    canvas.brush.color := RGB(65, 65, 65);
-    canvas.Polygon(add(Grif, 0, 0, false));
-
-    canvas.brush.color := RGB(108, 31, 5);
-    canvas.Polygon(add(Head, 0, 0, false));
-
-    canvas.brush.color := RGB(26, 19, 9);
-    canvas.Ellipse(xc - 8, yc - 8, xc + 8, yc + 8);
-
-    canvas.brush.color := RGB(225, 165, 105);
-    canvas.FloodFill(xc - Round(12 * cosa), yc - Round(12 * sina), clBlack,
-      fsBorder);
-
-    canvas.brush.color := RGB(169, 169, 169);
-    for i := 0 to 2 do
-    begin
-      canvas.Polygon(add(Peg, 7 * i, 0, false));
-      canvas.Polygon(add(Peg, 7 * i, 0, true));
-    end;
-    canvas.pen.color := RGB(255, 254, 255);
-    for i := 0 to 2 do
-      for k := 0 to 3 do
-        canvas.PolyBezier(add(Line, 27 * k, i * 3, false));
-  end
-end;
-
-procedure TGuitar.rotate;
-begin
-  sina := sin(angle);
-  cosa := cos(angle);
-  redraw();
-end;
-
-procedure TGuitar.changelineframe;
-begin
-  if frame <> lineframe then
-  begin
-    lineframe := frame;
-    if frame > 2 then
-    begin
-      Line[1].y := 3 * (frame mod 2) - 3;
-      Line[2].y := -3 * (frame mod 2) - 3;
-    end
-    else
-    begin
-      Line[2].y := 3 * (frame mod 2) - 3;
-      Line[1].y := -3 * (frame mod 2) - 3;
-    end;
-    redraw();
-  end;
-end;
-
-procedure TGuitar.draw;
-begin
-  dest.draw(x - xc, y - yc, source);
-end;
-
-procedure TGuitar.newpoints;
-begin
-  Body := [Point(-40, -28), Point(-20, -30), Point(-8, -12), Point(8, -23),
-    Point(28, -23), Point(28, 23), Point(8, 23), Point(-8, 12), Point(-20, 30),
-    Point(-30, 28), Point(-56, 28), Point(-56, -28), Point(-40, -28)];
-  bridge := [Point(-29, -14), Point(-26, -14), Point(-26, 14), Point(-29, 14)];
-  Grif := [Point(3, -5), Point(74, -5), Point(74, 5), Point(3, 5)];
-  Head := [Point(74, -6), Point(97, -6), Point(97, 6), Point(74, 6)];
-  Peg := [Point(76, -9), Point(79, -9), Point(79, -7), Point(76, -7)];
-  Line := [Point(-27, -3), Point(-14, -3), Point(-14, -3), Point(0, -3)];
-end;
-
-
-
-  end.
+end.
